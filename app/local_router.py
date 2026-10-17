@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.conversation import ChatMessage, ModelResponse, ToolCall, ToolResult
-from app.parsing import content_tokens, extract_email, extract_sku, strip_email
+from app.parsing import catalog_query, content_tokens, extract_email, extract_sku
 from app.tools import ToolSpec
 
 HELP_TEXT = (
@@ -36,7 +36,7 @@ def _from_user(text: str) -> ModelResponse:
         return ModelResponse(tool_calls=[_case_call(text)])
     if not tokens and sku is None:
         return ModelResponse(text=HELP_TEXT)
-    return ModelResponse(tool_calls=[ToolCall(name="search_catalog", args={"query": strip_email(text)})])
+    return ModelResponse(tool_calls=[ToolCall(name="search_catalog", args={"query": catalog_query(text)})])
 
 
 def _after_tools(text: str, results: list[ToolResult]) -> ModelResponse:
@@ -110,10 +110,10 @@ def _describe_case(result: dict[str, Any]) -> ModelResponse:
     if "error" in result:
         return ModelResponse(text=str(result["error"]))
     sku = result.get("sku")
-    sku_bit = f" for {sku}" if isinstance(sku, str) and sku else ""
+    about = f" about {sku}" if isinstance(sku, str) and sku else ""
     return ModelResponse(
         text=(
-            f"Opened support case {result['case_id']}{sku_bit} "
+            f"Opened support case {result['case_id']}{about} "
             f"for {result['customer_email']}. Status: {result['status']}."
         )
     )

@@ -39,4 +39,17 @@ def content_tokens(text: str) -> list[str]:
 
 
 def strip_email(text: str) -> str:
-    return EMAIL_RE.sub(" ", text)
+    cleaned = EMAIL_RE.sub(" ", text)
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
+def catalog_query(text: str) -> str:
+    """Search text made of product words, without the customer's email."""
+
+    tokens = content_tokens(text)
+    if tokens:
+        return " ".join(tokens)
+    sku = extract_sku(text)
+    if sku:
+        return sku
+    return strip_email(text)

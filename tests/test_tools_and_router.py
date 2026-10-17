@@ -67,6 +67,7 @@ def test_local_router_checks_lantern_stock() -> None:
     result = Agent(LocalToolRouter(), MemoryStore()).run("Is the Lumen lantern in stock?")
 
     assert [item.name for item in result.trace] == ["search_catalog", "check_stock"]
+    assert result.trace[0].args["query"] == "lumen lantern"
     assert result.trace[1].result["sku"] == "LN-220"
     assert result.trace[1].result["quantity"] == 24
     assert "24" in result.reply
@@ -84,6 +85,7 @@ def test_local_router_opens_a_case_for_the_out_of_stock_jacket() -> None:
         "check_stock",
         "create_support_case",
     ]
+    assert result.trace[0].args["query"] == "trailblazer jacket"
     case = store.get_case(result.trace[-1].result["case_id"])
     assert case is not None
     assert case.sku == "TB-100"
