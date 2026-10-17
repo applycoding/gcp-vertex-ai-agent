@@ -1,0 +1,41 @@
+# Cloud Build pipeline for the agent image and a Cloud Run deploy.
+# CI does not run this file. Submit it yourself:
+#   gcloud builds submit --config cloudbuild.yaml --project "$PROJECT_ID"
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/vertex-agent:$SHORT_SHA
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/vertex-agent:latest
+      - .
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/vertex-agent
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - vertex-ai-agent
+      - --image
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/vertex-agent:$SHORT_SHA
+      - --region
+      - ${_REGION}
+      - --service-account
+      - vertex-ai-agent@$PROJECT_ID.iam.gserviceaccount.com
+      - --set-env-vars
+      - MODEL_BACKEND=vertex,STORE_BACKEND=firestore,SECRET_MANAGER_ENABLED=true,GOOGLE_CLOUD_LOCATION=${_REGION},GEMINI_MODEL=gemini-2.5-flash
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/vertex-agent:$SHORT_SHA
+substitutions:
+  _REGION: us-central1
+  _REPO: agents
+options:
+  logging: CLOUD_LOGGING_ONLY
